@@ -1,7 +1,7 @@
 import asyncio
 import io
 from typing import Optional
-
+import wave
 import aiohttp
 
 
@@ -39,6 +39,35 @@ class TTSClient:
                 if response.status == 200:
                     result = await response.json()
                     return {"success": result["success"], "spk_id": result["spk_id"]}
+                else:
+                    error_detail = await response.text()
+                    return {
+                        "success": False,
+                        "error": f"API Error {response.status}: {error_detail}",
+                    }
+        except Exception as e:
+            return {"success": False, "error": f"Connection Exception: {str(e)}"}
+
+    async def get_speech(self, spk_id: str, text: str):
+        session = await self._get_session()
+
+        data = aiohttp.FormData()
+        data.add_field("zero_shot_spk_id", spk_id)
+        data.add_field("tts_text", text)
+        data.add_field("prompt_text", "")
+        data.add_field("prompt_wav", b"", filename="t.wav")
+
+        try:
+            async with session.post(
+                f"{self.base_url}/inference_zero_shot", data=data
+            ) as response:
+                if response.status == 200:
+                    audio_bytes = await response.read()
+                    return {
+                        "success": True,
+                        "audio": io.BytesIO(audio_bytes),
+                        "spk_id": spk_id,
+                    }
                 else:
                     error_detail = await response.text()
                     return {
