@@ -1,4 +1,5 @@
 import asyncio
+import io
 from typing import Optional
 
 import aiohttp
@@ -21,7 +22,9 @@ class TTSClient:
 
         data = aiohttp.FormData()
         data.add_field("spk_id", spk_id)
-        data.add_field("prompt_text", prompt_text)
+        data.add_field(
+            "prompt_text", "You are a helpful assistant.<|endofprompt|>" + prompt_text
+        )
         data.add_field(
             "prompt_wav",
             wav_bytes,
