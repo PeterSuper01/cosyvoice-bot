@@ -1,4 +1,6 @@
 .venv
 .env
 test_files/
+output.wav
+__pycache__
 
