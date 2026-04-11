@@ -44,3 +44,7 @@ class TTSClient:
                     }
         except Exception as e:
             return {"success": False, "error": f"Connection Exception: {str(e)}"}
+
+    async def close(self):
+        if self.session and not self.session.closed:
+            await self.session.close()
