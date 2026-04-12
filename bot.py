@@ -12,6 +12,9 @@ class TTSBot(commands.Bot):
         super().__init__(command_prefix="!", intents=intents)
         self.tts_client = TTSClient()
 
+    async def setup_hook(self):
+        await self.load_extension("cogs.tts")
+
     async def close(self):
         await self.tts_client.close()
         await super().close()
