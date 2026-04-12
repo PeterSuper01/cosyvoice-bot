@@ -1,3 +1,4 @@
+import asyncio
 import discord
 from discord.ext import commands
 
@@ -5,6 +6,32 @@ from discord.ext import commands
 class TTSCog(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        self._queue = asyncio.Queue()
+        self._task = None
+
+    def _get_vc(self):
+        return self.bot.voice_clients[0] if self.bot.voice_clients else None
+
+    async def _player_loop(self, vc):
+        while True:
+            try:
+                audio = await asyncio.wait_for(self._queue.get(), timeout=300)
+            except asyncio.TimeoutError:
+                break
+            audio.seek(0)
+            vc.play(discord.FFmpegPCMAudio(audio, pipe=True, before_options="-f wav"))
+            while vc.is_playing():
+                await asyncio.sleep(0.1)
+            self._queue.task_done()
+
+    async def _enqueue(self, ctx, audio):
+        vc = self._get_vc()
+        if vc is None:
+            await ctx.reply("Bot is not in the voice channel.")
+            return
+        await self._queue.put(audio)
+        if self._task is None or self._task.done():
+            self._task = self.bot.loop.create_task(self._player_loop(vc))
 
     @commands.command()
     async def register(self, ctx: commands.Context, *, prompt_text: str = ""):
@@ -20,6 +47,15 @@ class TTSCog(commands.Cog):
             if result["success"]
             else f"Failed: {result['error']}"
         )
+
+    @commands.command()
+    async def tts(self, ctx, *, text):
+        result = await self.bot.tts_client.get_speech(str(ctx.author.id), text)
+        if not result["success"]:
+            await ctx.reply(f"Failed: {result['error']}")
+            return
+        await self._enqueue(ctx, result["audio"])
+        await ctx.message.add_reaction("🔊")
 
 
 async def setup(bot):
