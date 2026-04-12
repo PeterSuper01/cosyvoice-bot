@@ -3,6 +3,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     DISCORD_BOT_TOKEN: str
+    DISCORD_VOICE_CHANNEL_ID: int
     BASE_URL: str
     TEST_URL: str
 
