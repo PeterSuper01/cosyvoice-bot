@@ -7,7 +7,7 @@ class TTSCog(commands.Cog):
         self.bot = bot
 
     @commands.command()
-    async def register(self, ctx: commands.Context, *, prompt_text: str):
+    async def register(self, ctx: commands.Context, *, prompt_text: str = ""):
         if not ctx.message.attachments:
             await ctx.reply("Attach a .wav file.")
             return
@@ -16,7 +16,9 @@ class TTSCog(commands.Cog):
             str(ctx.author.id), prompt_text, wav_bytes
         )
         await ctx.reply(
-            "Registered!" if result["success"] else f"Failed: {result['error']}"
+            f"Registered! {result.get('recognized_prompt_text', '')}"
+            if result["success"]
+            else f"Failed: {result['error']}"
         )
 
 

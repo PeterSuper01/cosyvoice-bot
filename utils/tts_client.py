@@ -23,7 +23,12 @@ class TTSClient:
         data = aiohttp.FormData()
         data.add_field("spk_id", spk_id)
         data.add_field(
-            "prompt_text", "You are a helpful assistant.<|endofprompt|>" + prompt_text
+            "prompt_text",
+            (
+                "You are a helpful assistant.<|endofprompt|>" + prompt_text
+                if len(prompt_text) > 0
+                else ""
+            ),
         )
         data.add_field(
             "prompt_wav",
@@ -38,7 +43,11 @@ class TTSClient:
             ) as response:
                 if response.status == 200:
                     result = await response.json()
-                    return {"success": result["success"], "spk_id": result["spk_id"]}
+                    return {
+                        "success": result["success"],
+                        "spk_id": result["spk_id"],
+                        "recognized_prompt_text": result["recognized_prompt_text"],
+                    }
                 else:
                     error_detail = await response.text()
                     return {
