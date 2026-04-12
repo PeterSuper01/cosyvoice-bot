@@ -6,6 +6,7 @@ from utils.tts_client import TTSClient
 
 intents = discord.Intents.default()
 intents.message_content = True
+intents.voice_states = True
 
 
 class TTSBot(commands.Bot):
@@ -18,9 +19,11 @@ class TTSBot(commands.Bot):
         await self.load_extension("cogs.tts")
 
     async def on_ready(self):
-        channel = self.get_channel(self.discord_voice_channel_id)
+        channel = self.get_channel(int(self.discord_voice_channel_id))
         await channel.connect()
 
     async def close(self):
+        for vc in self.voice_clients:
+            await vc.disconnect(force=True)
         await self.tts_client.close()
         await super().close()
