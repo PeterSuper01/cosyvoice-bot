@@ -71,10 +71,20 @@ class TTSClient:
                 f"{self.base_url}/inference_zero_shot", data=data
             ) as response:
                 if response.status == 200:
-                    audio_bytes = await response.read()
+                    chunks = []
+                    async for chunk in response.content.iter_any():
+                        chunks.append(chunk)
+                    audio_bytes = b"".join(chunks)
+                    wav_buffer = io.BytesIO()
+                    with wave.open(wav_buffer, "wb") as wf:
+                        wf.setnchannels(1)
+                        wf.setsampwidth(2)
+                        wf.setframerate(24000)
+                        wf.writeframes(audio_bytes)
+                    wav_buffer.seek(0)
                     return {
                         "success": True,
-                        "audio": io.BytesIO(audio_bytes),
+                        "audio": wav_buffer,
                         "spk_id": spk_id,
                     }
                 else:
