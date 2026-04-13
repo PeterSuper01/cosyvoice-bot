@@ -1,3 +1,4 @@
+import asyncio
 from discord.ext import commands
 import discord
 
@@ -27,3 +28,16 @@ class TTSBot(commands.Bot):
             await vc.disconnect(force=True)
         await self.tts_client.close()
         await super().close()
+
+
+async def main():
+    bot = TTSBot()
+    async with bot:
+        await bot.start(settings.DISCORD_BOT_TOKEN)
+
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except KeyboardInterrupt:
+        pass
