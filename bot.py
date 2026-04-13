@@ -18,6 +18,7 @@ class TTSBot(commands.Bot):
 
     async def setup_hook(self):
         await self.load_extension("cogs.tts")
+        await self.load_extension("cogs.admin")
 
     async def on_ready(self):
         channel = self.get_channel(int(self.discord_voice_channel_id))
