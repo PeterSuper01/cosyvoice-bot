@@ -1,6 +1,8 @@
 import asyncio
 import discord
 from discord.ext import commands
+import re
+import emoji
 
 
 class TTSCog(commands.Cog):
@@ -8,6 +10,11 @@ class TTSCog(commands.Cog):
         self.bot = bot
         self._queue = asyncio.Queue()
         self._task = None
+
+    def _clean_text(self, text):
+        text = re.sub(r"<a?:\w+:\d+>", "", text)
+        text = emoji.replace_emoji(text, replace="")
+        return text.strip()
 
     def _get_vc(self):
         return self.bot.voice_clients[0] if self.bot.voice_clients else None
@@ -49,8 +56,12 @@ class TTSCog(commands.Cog):
         )
 
     @commands.command()
-    async def tts(self, ctx, *, text):
-        result = await self.bot.tts_client.get_speech(str(ctx.author.id), text)
+    async def tts(self, ctx: commands.Context, *, text):
+        clean_text = self._clean_text(text)
+        if not clean_text:
+            await ctx.reply("No text left after cleaning emojis.")
+            return
+        result = await self.bot.tts_client.get_speech(str(ctx.author.id), clean_text)
         if not result["success"]:
             await ctx.reply(f"Failed: {result['error']}")
             return
