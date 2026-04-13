@@ -23,7 +23,12 @@ class TTSClient:
         data = aiohttp.FormData()
         data.add_field("spk_id", spk_id)
         data.add_field(
-            "prompt_text", "You are a helpful assistant.<|endofprompt|>" + prompt_text
+            "prompt_text",
+            (
+                "You are a helpful assistant.<|endofprompt|>" + prompt_text
+                if len(prompt_text) > 0
+                else ""
+            ),
         )
         data.add_field(
             "prompt_wav",
@@ -38,7 +43,11 @@ class TTSClient:
             ) as response:
                 if response.status == 200:
                     result = await response.json()
-                    return {"success": result["success"], "spk_id": result["spk_id"]}
+                    return {
+                        "success": result["success"],
+                        "spk_id": result["spk_id"],
+                        "recognized_prompt_text": result["recognized_prompt_text"],
+                    }
                 else:
                     error_detail = await response.text()
                     return {
@@ -62,10 +71,20 @@ class TTSClient:
                 f"{self.base_url}/inference_zero_shot", data=data
             ) as response:
                 if response.status == 200:
-                    audio_bytes = await response.read()
+                    chunks = []
+                    async for chunk in response.content.iter_any():
+                        chunks.append(chunk)
+                    audio_bytes = b"".join(chunks)
+                    wav_buffer = io.BytesIO()
+                    with wave.open(wav_buffer, "wb") as wf:
+                        wf.setnchannels(1)
+                        wf.setsampwidth(2)
+                        wf.setframerate(24000)
+                        wf.writeframes(audio_bytes)
+                    wav_buffer.seek(0)
                     return {
                         "success": True,
-                        "audio": io.BytesIO(audio_bytes),
+                        "audio": wav_buffer,
                         "spk_id": spk_id,
                     }
                 else:
