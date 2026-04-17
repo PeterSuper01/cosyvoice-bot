@@ -4,10 +4,12 @@ from typing import Optional
 import wave
 import aiohttp
 
+from config import settings
+
 
 class TTSClient:
     def __init__(self, port=50000):
-        self.base_url = f"http://127.0.0.1:{port}"
+        self.base_url = f"{settings.BASE_URL}:{port}"
         self.session: Optional[aiohttp.ClientSession] = None
 
     async def _get_session(self):
